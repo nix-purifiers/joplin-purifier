@@ -1,0 +1,12 @@
+const fs=require('fs');
+const path=require('path');
+const Module=require('module');
+const sdk=process.env.JOPLIN_PURIFIER_ORIGINAL;
+const filename=path.join(sdk,'share/joplin-desktop/resources/app.asar/main-html.bundle.js');
+let code=fs.readFileSync(filename,'utf8');
+const marker='N5u();})();';
+if(code.split(marker).length!==2)throw new Error('SDK bundle entry point changed');
+code=code.replace(marker,'module.exports={repository:A8o(),plugins:ly(),shim:qn(),settings:Pn(),fsDriver:nXt(),shimInit:uZt(),logger:kr()};})();');
+const native=new Module(filename,module);native.filename=filename;native.paths=Module._nodeModulePaths(path.dirname(filename));
+native._compile(code,filename);
+module.exports=native.exports;
