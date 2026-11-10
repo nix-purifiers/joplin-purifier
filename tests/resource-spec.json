@@ -1,0 +1,8 @@
+{
+  "name": "joplin",
+  "builder": "Joplin",
+  "roots": {
+    "combined.md": "combined.md"
+  },
+  "changedFile": "answer.json"
+}

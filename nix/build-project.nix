@@ -1,5 +1,6 @@
 {
   lib,
+  purifier,
   runCommand,
   python3,
   lockedSdk,
@@ -18,6 +19,8 @@
   fetchers ? { },
   doCheck ? false,
   checkCommand ? "",
+  resourceRoots ? { },
+  resourceDependencies ? [ ],
 }:
 let
   lock = readLock { inherit src lockFile; };
@@ -41,7 +44,7 @@ let
         "output"
       ]);
   };
-  project = runCommand "joplin-project" { } ''
+  builtProject = runCommand "joplin-project" { } ''
     export JOPLIN_PURIFIER_ENVIRONMENT=${profile} JOPLIN_PURIFIER_SDK_PATH=${lockedSdk}
     export JOPLIN_PURIFIER_FONTS=${fontConfig}
     export JOPLIN_PURIFIER_XVFB=${xvfb-run} JOPLIN_PURIFIER_DBUS=${lib.getBin dbus}
@@ -54,6 +57,17 @@ let
     ${python3}/bin/python ${driver}/joplin_purifier_run_project.py
     ${lib.optionalString doCheck checkCommand}
   '';
+  projections = lib.optionalAttrs (resourceRoots != { }) (
+    purifier.resourceProjections {
+      producer = builtProject;
+      roots = resourceRoots;
+      dependencies = resourceDependencies;
+      inherit runCommand python3;
+    }
+  );
+  project = builtProject // {
+    inherit projections;
+  };
   release =
     runCommand "joplin-project-release"
       {
@@ -74,6 +88,6 @@ in
     environment = profile;
   };
   tests = project;
-  inherit release;
+  inherit release projections;
   fetches = lock.entries;
 }
